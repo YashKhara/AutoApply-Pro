@@ -1,0 +1,1787 @@
+AutoApply-Pro/
+├── package.json
+    {
+        "name": "autoapply-pro",
+        "private": true,
+        "version": "1.0.0",
+        "type": "module",
+        "scripts": {
+        "dev": "vite",
+        "build": "vite build",
+        "preview": "vite preview"
+        },
+        "dependencies": {
+        "@heroicons/react": "^2.1.3",
+        "axios": "^1.6.8",
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0",
+        "zustand": "^4.5.2",
+        "lucide-react": "^0.378.0"
+        },
+        "devDependencies": {
+        "@types/react": "^18.2.66",
+        "@types/react-dom": "^18.2.22",
+        "@vitejs/plugin-react": "^4.2.1",
+        "autoprefixer": "^10.4.19",
+        "eslint": "^8.57.0",
+        "eslint-plugin-react": "^7.34.1",
+        "eslint-plugin-react-hooks": "^4.6.0",
+        "eslint-plugin-react-refresh": "^0.4.6",
+        "postcss": "^8.4.38",
+        "tailwindcss": "^3.4.3",
+        "vite": "^5.2.0"
+        }
+    } 
+├── vite.config.js
+        // vite.config.js
+        import { defineConfig } from 'vite';
+        import react from '@vitejs/plugin-react';
+        import { resolve } from 'path';
+
+        export default defineConfig({
+        plugins: [react()],
+        build: {
+            outDir: 'dist', // Output directory
+            rollupOptions: {
+            input: {
+                // Main entry point for the popup HTML
+                popup: resolve(__dirname, 'popup.html'), // Assuming popup.html is in the root
+                
+                // Explicitly define your JavaScript entry points for background and content scripts
+                // These will be bundled into files named 'background.js' and 'content.js' in 'outDir'
+                background: resolve(__dirname, 'src/background/main.js'),
+                content: resolve(__dirname, 'src/content/main.js'),
+            },
+            output: {
+                // Custom naming for entry files to match manifest.json expectations
+                entryFileNames: (chunkInfo) => {
+                if (chunkInfo.name === 'background') {
+                    return 'background.js'; // Output as dist/background.js
+                }
+                if (chunkInfo.name === 'content') {
+                    return 'content.js'; // Output as dist/content.js
+                }
+                // For other entry chunks (like the JS bundled for popup.html), use a hashed name in assets
+                return 'assets/[name]-[hash].js';
+                },
+                // Naming for chunks (code-split modules)
+                chunkFileNames: 'assets/[name]-[hash].js',
+                // Naming for static assets (images, fonts, etc.)
+                assetFileNames: 'assets/[name]-[hash].[ext]',
+            },
+            },
+        },
+        });
+├── tailwind.config.js
+        // tailwind.config.js
+        /** @type {import('tailwindcss').Config} */
+        export default {
+            content: [
+                "./popup.html",
+                "./src/**/*.{js,ts,jsx,tsx}",
+                "./src/**/*.css",
+            ],
+            theme: {
+            extend: {},
+            },
+            plugins: [],
+        }
+├── postcss.config.js
+        // postcss.config.js
+        module.exports = {
+            plugins: {
+                tailwindcss: {},
+                autoprefixer: {},
+            },
+        }
+├── README.md    
+    # AutoApply Pro - Chrome Extension
+
+    This project is a Chrome browser extension that automates the LinkedIn "Easy Apply" job application process.
+
+    ## Features
+
+    - **Automated Applications**: Intelligently applies to jobs based on user-configured search URLs.
+    - **AI Integration**: Uses Google Gemini to generate personalized cover letters and answers to subjective questions.
+    - **Dynamic Question Handling**: Pauses and prompts the user for answers to new, mandatory questions.
+    - **User-Friendly UI**: A clean, "Material 3-like" interface for managing bots, questions, profile data, and settings.
+    - **Robust Logging**: Logs all application attempts to a user-specified Google Sheet.
+    - **Resilient Automation**: Designed to handle errors gracefully and adapt to minor UI changes on LinkedIn.
+
+    ## Technical Stack
+
+    - **Manifest**: Manifest V3
+    - **Framework**: React (with Vite)
+    - **Styling**: Tailwind CSS
+    - **State Management**: Zustand
+    - **APIs**: Google Gemini API, Google Sheets API
+
+    ## Setup and Installation
+
+    1.  **Clone the Repository**
+        ```bash
+        git clone <repository_url>
+        cd AutoApply-Pro
+        ```
+
+    2.  **Install Dependencies**
+        ```bash
+        npm install
+        ```
+
+    3.  **Build the Extension**
+        ```bash
+        npm run build
+        ```
+        This command will create a `dist` folder containing the bundled extension files.
+
+    4.  **Load the Extension in Chrome**
+        - Open Chrome and navigate to `chrome://extensions`.
+        - Enable "Developer mode" in the top right corner.
+        - Click on "Load unpacked".
+        - Select the `dist` folder generated in the previous step.
+
+    5.  **Configure the Extension**
+        - Click on the AutoApply Pro icon in your Chrome toolbar.
+        - Navigate to the **Settings** section to enter your API keys and Google Sheet link.
+        - Fill out your information in the **Profile** section.
+        - Create and configure your bots in the **Bots** section.
+
+    ## Development
+
+    To run the project in development mode with hot-reloading:
+
+    ```bash
+    npm run dev
+├── public/
+│   ├── manifest.json
+        {
+        "manifest_version": 3,
+        "name": "AutoApply Pro",
+        "version": "1.0.0",
+        "description": "Automates the LinkedIn 'Easy Apply' job application process.",
+        "permissions": [
+            "storage",
+            "tabs",
+            "scripting",
+            "activeTab",
+            "windows"  
+        ],
+        "host_permissions": [
+            "https://www.linkedin.com/*",
+            "https://generativelanguage.googleapis.com/*",
+            "https://sheets.googleapis.com/*" 
+        ],
+        "action": {
+            "default_popup": "popup.html",
+            "default_icon": {
+            "16": "icons/icon16.png",
+            "48": "icons/icon48.png",
+            "128": "icons/icon128.png"
+            }
+        },
+        "background": {
+            "service_worker": "background.js",
+            "type": "module"
+        },
+        "content_scripts": [
+            {
+            "matches": [
+                "https://www.linkedin.com/jobs/search/*",
+                "https://www.linkedin.com/jobs/view/*",
+                "https://www.linkedin.com/jobs/collections/*"
+            ],
+            "js": ["content.js"] 
+            }
+        ],
+        "web_accessible_resources": [
+            {
+            "resources": ["assets/*", "icons/*"],
+            "matches": ["<all_urls>"]
+            }
+        ],
+        }
+│   ├── icons/
+│   │   ├── icon16.png
+│   │   ├── icon48.png
+│   │   └── icon128.png
+│   └── popup.html
+            <!doctype html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8" />
+                <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+                <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+                <title>AutoApply Pro</title>
+                <link href="./src/popup/index.css" rel="stylesheet">
+            </head>
+            <body class="w-[500px] h-auto">
+                <div id="root"></div>
+                <script type="module" src="./src/popup/main.jsx"></script>
+            </body>
+            </html>
+├── src/
+│   ├── background/
+│   │   └── main.js
+                // src/background/main.js
+                import { getStorage, setStorage } from '../shared/storage.js';
+                import { callGeminiAPI, logToGoogleSheet } from '../shared/api.js';
+
+                // Global state for running bots
+                let runningBots = {};
+
+                // Listener for messages from popup or content scripts
+                chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+                    (async () => { // Use an async IIFE to allow await inside the listener
+                        console.log('Background: Received message:', request);
+
+                        switch (request.action) {
+                            case "toggleBot":
+                                handleBotToggle(request.bot);
+                                sendResponse({ status: "success" });
+                                break;
+
+                            case "getProfileAndSettings":
+                                // Send profile and settings data to content script
+                                const profile = await getStorage('profile');
+                                const settings = await getStorage('settings');
+                                sendResponse({ profile: profile || {}, settings: settings || {} });
+                                break;
+
+                            case "getKnownQuestions":
+                                // Send known questions to content script
+                                const questions = await getStorage('questions');
+                                sendResponse(questions || []);
+                                break;
+
+                            case "generateCoverLetter":
+                                // Call Gemini API for cover letter
+                                const coverLetterPrompt = request.settings.aiCoverLetterPrompt
+                                    .replace('{profile.json}', JSON.stringify(request.profile, null, 2))
+                                    .replace('{Job Description}', request.jobDescription);
+                                const coverLetter = await callGeminiAPI(coverLetterPrompt);
+                                sendResponse(coverLetter);
+                                break;
+
+                            case "answerQuestion":
+                                // Call Gemini API for question answer
+                                const questionPrompt = request.settings.aiQuestionPrompt
+                                    .replace('{the question}', request.question)
+                                    .replace('{profile.json}', JSON.stringify(request.profile, null, 2))
+                                    .replace('{Job Description}', request.jobDescription);
+                                const answer = await callGeminiAPI(questionPrompt);
+                                sendResponse(answer);
+                                break;
+
+                            case "newQuestionFound":
+                                // Add new question to storage and notify popup (or update badge)
+                                let storedQuestions = await getStorage('questions') || [];
+                                const newQuestion = {
+                                    id: Date.now(),
+                                    text: request.questionText,
+                                    answer: '', // Initially empty, user will fill in
+                                    isNew: true // Mark as new for UI distinction
+                                };
+                                storedQuestions.push(newQuestion);
+                                await setStorage({ questions: storedQuestions });
+
+                                // You might also want to update the extension badge text here
+                                // e.g., chrome.action.setBadgeText({ text: '!' });
+                                // and send a message to the popup if it's open to refresh its state.
+                                sendResponse({ status: "success", message: "Question added." });
+                                break;
+
+                            case "answerSubmitted":
+                                // Update the answer for an existing question in storage
+                                let existingQuestions = await getStorage('questions') || [];
+                                const qIndex = existingQuestions.findIndex(q => q.text === request.question);
+                                if (qIndex !== -1) {
+                                    existingQuestions[qIndex].answer = request.answer;
+                                    existingQuestions[qIndex].isNew = false; // Mark as no longer new
+                                    await setStorage({ questions: existingQuestions });
+                                    sendResponse({ status: "success", message: "Question answer updated." });
+                                } else {
+                                    sendResponse({ status: "error", message: "Question not found." });
+                                }
+                                break;
+
+                            case "logApplication":
+                                // Log application outcome to Google Sheet
+                                const logSuccess = await logToGoogleSheet(request);
+                                sendResponse({ status: logSuccess ? "success" : "error" });
+                                break;
+
+                            case "skipApplication":
+                                // This message indicates the content script should skip the current application
+                                // and proceed to the next job or stop. We'll handle the actual skipping logic
+                                // within the content script's state machine, but the background acknowledges.
+                                console.log("Background: Acknowledged application skip request.");
+                                sendResponse({ status: "acknowledged" });
+                                break;
+
+
+                            default:
+                                console.warn('Background: Unknown message action:', request.action);
+                                sendResponse({ status: "error", message: "Unknown action" });
+                        }
+                    })();
+                    return true; // Keep the message channel open for async sendResponse
+                });
+
+                async function handleBotToggle(bot) {
+                    if (bot.isOn) {
+                        if (!runningBots[bot.id]) {
+                            console.log(`Background: Starting bot: ${bot.botName}`);
+                            runningBots[bot.id] = { status: 'running', windowId: null };
+                            startAutomation(bot);
+                        }
+                    } else {
+                        if (runningBots[bot.id]) {
+                            console.log(`Background: Stopping bot: ${bot.botName}`);
+                            stopAutomation(bot.id);
+                        }
+                    }
+                }
+
+                async function startAutomation(bot) {
+                    try {
+                        const window = await chrome.windows.create({
+                            url: bot.linkedInUrl,
+                            type: 'normal',
+                            state: 'maximized' // Or 'minimized' if you prefer it runs in background
+                        });
+                        runningBots[bot.id].windowId = window.id;
+
+                        // Inject content script programmatically after tab is loaded
+                        chrome.tabs.onUpdated.addListener(function listener(tabId, info) {
+                            if (tabId === window.tabs[0].id && info.status === 'complete' && info.url?.startsWith('https://www.linkedin.com/')) {
+                                console.log(`Background: Injecting content script into tab ${tabId}`);
+                                chrome.scripting.executeScript({
+                                    target: { tabId: tabId },
+                                    files: ['src/content/main.js']
+                                });
+                                chrome.tabs.sendMessage(tabId, { action: "startBotAutomation", bot: bot });
+                                chrome.tabs.onUpdated.removeListener(listener); // Clean up
+                            }
+                        });
+
+                    } catch (error) {
+                        console.error(`Background: Error starting bot ${bot.botName}:`, error);
+                        await logToGoogleSheet({
+                            botName: bot.botName,
+                            status: 'error',
+                            error: `Failed to start: ${error.message}`
+                        });
+                        stopAutomation(bot.id);
+                    }
+                }
+
+                function stopAutomation(botId) {
+                    if (runningBots[botId]) {
+                        const { windowId } = runningBots[botId];
+                        if (windowId) {
+                            chrome.windows.remove(windowId);
+                            console.log(`Background: Closed window ${windowId} for bot ${botId}`);
+                        }
+                        delete runningBots[botId];
+                        console.log(`Background: Stopped bot: ${botId}`);
+                    }
+                }
+
+                // Ensure bots are stopped if the extension is reloaded/updated
+                chrome.runtime.onSuspend.addListener(() => {
+                    console.log("Background: Extension suspended. Stopping all running bots.");
+                    Object.keys(runningBots).forEach(botId => stopAutomation(botId));
+                });
+
+                // Optional: Listener for when a tab managed by a bot is closed by the user
+                chrome.windows.onRemoved.addListener((windowId) => {
+                    const botIdToStop = Object.keys(runningBots).find(botId => runningBots[botId].windowId === windowId);
+                    if (botIdToStop) {
+                        console.log(`Background: User closed window ${windowId}. Stopping bot ${botIdToStop}.`);
+                        stopAutomation(botIdToStop);
+                        // Also update the popup state so the toggle button is off
+                        chrome.runtime.sendMessage({ action: "botStoppedByUser", botId: botIdToStop }).catch(e => console.warn("Could not notify popup:", e));
+                    }
+                });
+│   ├── content/
+│   │   └── main.js
+                // src/content/main.js
+                import { sendMessageToBackground, requestProfileAndSettings, requestKnownQuestions, notifyNewQuestion, requestAICoverLetter, requestAIQuestionAnswer, logApplicationOutcome } from '../utils/messaging';
+                import { findElement, clickElement, typeIntoElement, getElementText, checkElementExists, getResilientSelector} from '../utils/domHelpers';
+import { wait } from '../utils/wait'
+
+                console.log("AutoApply Pro Content Script Loaded!");
+
+                // Define the states for our automation state machine
+                const AUTOMATION_STATES = {
+                    INITIALIZING: 'INITIALIZING',
+                    NAVIGATING_JOBS: 'NAVIGATING_JOBS',
+                    SCANNING_JOBS: 'SCANNING_JOBS',
+                    JOB_DETAILS: 'JOB_DETAILS',
+                    EASY_APPLY_CLICKED: 'EASY_APPLY_CLICKED',
+                    FILLING_FORM_STEP: 'FILLING_FORM_STEP',
+                    GENERATING_COVER_LETTER: 'GENERATING_COVER_LETTER',
+                    ANSWERING_QUESTION: 'ANSWERING_QUESTION',
+                    WAITING_FOR_USER_INPUT: 'WAITING_FOR_USER_INPUT', // When modal is shown
+                    SUBMITTING_APPLICATION: 'SUBMITTING_APPLICATION',
+                    APPLICATION_COMPLETED: 'APPLICATION_COMPLETED',
+                    ERROR: 'ERROR',
+                    IDLE: 'IDLE' // When no more jobs or stopped
+                };
+
+                let currentBot = null;
+                let profileData = null;
+                let appSettings = null;
+                let knownQuestions = [];
+                let automationState = AUTOMATION_STATES.INITIALIZING;
+                let currentJob = null; // Stores details of the job being applied to
+
+                /**
+                * Updates the automation state and logs it.
+                * @param {string} newState - The new state to transition to.
+                */
+                function updateAutomationState(newState) {
+                    automationState = newState;
+                    console.log(`Automation State: ${automationState}`);
+                    // Potentially send state updates to background/popup for UI feedback
+                    // sendMessageToBackground({ action: 'updateBotStatus', botId: currentBot.id, status: newState });
+                }
+
+                /**
+                * Main function to run the automation state machine.
+                */
+                async function runAutomation() {
+                    try {
+                        if (automationState === AUTOMATION_STATES.INITIALIZING) {
+                            console.log("Initializing automation...");
+                            const { profile, settings } = await requestProfileAndSettings();
+                            profileData = profile;
+                            appSettings = settings;
+                            knownQuestions = await requestKnownQuestions();
+
+                            if (!profileData || Object.keys(profileData).length === 0) {
+                                console.error("Profile data not loaded. Please fill out your profile in the extension popup.");
+                                updateAutomationState(AUTOMATION_STATES.ERROR);
+                                await logApplicationOutcome({ status: 'error', error: 'Profile data missing' });
+                                // Potentially display a more prominent error to the user
+                                return; // Stop if crucial data is missing
+                            }
+                            if (!appSettings || !appSettings.geminiApiKey) {
+                                console.error("Settings not loaded or Gemini API Key missing. Please configure settings.");
+                                updateAutomationState(AUTOMATION_STATES.ERROR);
+                                await logApplicationOutcome({ status: 'error', error: 'Settings or API key missing' });
+                                return;
+                            }
+
+                            // We need to know WHICH bot initiated this content script.
+                            // The background script will send this data via a message.
+                            // For now, let's assume `currentBot` is set via an initial message from background.
+                            // We'll modify background.js's scripting.executeScript to pass data later.
+                            // For immediate testing, let's mock it:
+                            // currentBot = { id: 1, botName: "Test Bot", linkedInUrl: window.location.href };
+                            // A better way is to listen for a message from the background script after injection.
+                            await sendMessageToBackground({ action: '
+│   ├── shared/
+│   │   ├── storage.js
+                // A simple async wrapper for chrome.storage.local
+                export const getStorage = (key) => {
+                    return new Promise((resolve) => {
+                        chrome.storage.local.get(key, (result) => {
+                            resolve(result[key]);
+                        });
+                    });
+                };
+
+                export const setStorage = (data) => {
+                    return new Promise((resolve) => {
+                        chrome.storage.local.set(data, () => {
+                            resolve();
+                        });
+                    });
+                };
+│   │   ├── profile.json
+│   │   └── api.js
+                // src/shared/api.js
+                import { getStorage } from './storage'; // We'll need settings, so import getStorage
+
+                /**
+                * Calls the Google Gemini API to generate text (e.g., cover letter, question answer).
+                * @param {string} promptText - The prompt to send to the Gemini API.
+                * @returns {Promise<string|null>} A promise that resolves with the generated text, or null if an error occurs.
+                */
+                export async function callGeminiAPI(promptText) {
+                console.log("Calling Gemini API with prompt:", promptText);
+                try {
+                    const settings = await getStorage('settings');
+                    const geminiApiKey = settings?.geminiApiKey;
+
+                    if (!geminiApiKey) {
+                    console.error("Gemini API Key is not set in settings.");
+                    return null;
+                    }
+
+                    // This URL might vary slightly based on the specific Gemini model and endpoint.
+                    // Ensure you use the correct endpoint for your Gemini setup (e.g., generative-language-client or a specific model like gemini-pro)
+                    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${geminiApiKey}`;
+
+                    const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        contents: [{
+                        parts: [{ text: promptText }]
+                        }]
+                    }),
+                    });
+
+                    if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error("Gemini API Error Response:", errorData);
+                    throw new Error(`Gemini API request failed: ${response.status} ${response.statusText} - ${errorData?.error?.message || 'Unknown error'}`);
+                    }
+
+                    const data = await response.json();
+                    // Gemini API response structure can vary, typically content is in candidates[0].content.parts[0].text
+                    const generatedText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                    if (!generatedText) {
+                    console.warn("Gemini API returned no generated text for prompt:", promptText, data);
+                    return null;
+                    }
+
+                    return generatedText;
+
+                } catch (error) {
+                    console.error("Error calling Google Gemini API:", error);
+                    // You might want to notify the user in the popup about API errors
+                    return null;
+                }
+                }
+
+                /**
+                * Logs data to a Google Sheet.
+                * @param {object} rowData - An object representing the row to append (e.g., { 'Job Title': '...', 'Company': '...', 'Status': '...' }).
+                * @returns {Promise<boolean>} A promise that resolves to true if successful, false otherwise.
+                */
+                export async function logToGoogleSheet(rowData) {
+                console.log("Attempting to log to Google Sheet:", rowData);
+                try {
+                    const settings = await getStorage('settings');
+                    const googleSheetLink = settings?.googleSheetLink;
+                    const googleSheetApiKey = settings?.googleSheetApiKey;
+
+                    if (!googleSheetLink || !googleSheetApiKey) {
+                    console.error("Google Sheet Link or API Key is not set in settings.");
+                    return false;
+                    }
+
+                    // Extract spreadsheet ID from the link
+                    const spreadsheetIdMatch = googleSheetLink.match(/\/d\/([a-zA-Z0-9_-]+)/);
+                    if (!spreadsheetIdMatch || !spreadsheetIdMatch[1]) {
+                    console.error("Invalid Google Sheet Link. Could not extract Spreadsheet ID.");
+                    return false;
+                    }
+                    const spreadsheetId = spreadsheetIdMatch[1];
+
+                    // Assuming the sheet we want to write to is named 'Applications' or similar.
+                    // You might need to make this configurable in settings too, or infer it.
+                    // For simplicity, let's assume the first sheet is 'Sheet1' or you configure the sheet name.
+                    // For now, let's target 'Sheet1'. You might need to change 'Sheet1' to your actual sheet name.
+                    const sheetName = 'Sheet1'; // *** IMPORTANT: User might need to configure this or ensure it's 'Sheet1' ***
+
+                    const API_URL = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${sheetName}:append?valueInputOption=RAW&key=${googleSheetApiKey}`;
+
+                    // Convert rowData object to an array of values in a specific order
+                    // This order must match your Google Sheet's column headers
+                    const headers = [
+                    'Timestamp', 'Bot Name', 'Job Title', 'Company', 'Application URL',
+                    'Status', 'Error Message', 'Cover Letter Generated', 'Questions Answered'
+                    ]; // Example headers - adjust as per your sheet
+
+                    const values = headers.map(header => {
+                    switch (header) {
+                        case 'Timestamp': return new Date().toLocaleString();
+                        case 'Bot Name': return rowData.botName || '';
+                        case 'Job Title': return rowData.jobTitle || '';
+                        case 'Company': return rowData.company || '';
+                        case 'Application URL': return rowData.applicationUrl || '';
+                        case 'Status': return rowData.status || 'Applied';
+                        case 'Error Message': return rowData.error || '';
+                        case 'Cover Letter Generated': return rowData.coverLetterGenerated ? 'Yes' : 'No';
+                        case 'Questions Answered': return rowData.questionsAnswered ? 'Yes' : 'No';
+                        default: return '';
+                    }
+                    });
+
+                    const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        values: [values],
+                    }),
+                    });
+
+                    if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error("Google Sheets API Error Response:", errorData);
+                    throw new Error(`Google Sheets API request failed: ${response.status} ${response.statusText} - ${errorData?.error?.message || 'Unknown error'}`);
+                    }
+
+                    console.log("Successfully logged to Google Sheet.");
+                    return true;
+
+                } catch (error) {
+                    console.error("Error logging to Google Sheet:", error);
+                    // You might want to notify the user in the popup about API errors
+                    return false;
+                }
+                }
+│   ├── background.js (To Be Implemented)
+│   ├── content.js (To Be Implemented)
+│   ├── utils/
+│   │   └── ai.js (To Be Implemented)
+│   │   └── googleSheets.js (To Be Implemented)
+│   │   └── domHelpers.js (To Be Implemented)   
+│   │   └── wait.js
+                // src/utils/wait.js
+                /**
+                * Pauses execution for a specified number of milliseconds.
+                * @param {number} ms - The number of milliseconds to wait.
+                * @returns {Promise<void>} A promise that resolves after the specified time.
+                */
+                export function wait(ms) {
+                    return new Promise(resolve => setTimeout(resolve, ms));
+                }
+│   │   └── domHelper.js
+                // src/utils/domHelpers.js
+                import { wait } from './wait';
+                import { requestProfileAndSettings } from './messaging';
+
+                let cachedSettings = null; // Cache settings to avoid repeated storage reads
+
+                /**
+                * Retrieves the cached settings, or fetches them if not available.
+                * @returns {Promise<object>} The application settings, including selectorResilience.
+                */
+                async function getSettings() {
+                if (!cachedSettings) {
+                    const { settings } = await requestProfileAndSettings();
+                    cachedSettings = settings;
+                }
+                return cachedSettings;
+                }
+
+                /**
+                * Finds an element by a given CSS selector, waiting for it to appear.
+                * Uses selector resilience if multiple selectors are provided.
+                * @param {string | string[]} selectors - A single CSS selector or an array of preferred selectors.
+                * @param {number} timeout - Maximum time to wait for the element in milliseconds.
+                * @param {number} interval - How often to check for the element in milliseconds.
+                * @returns {Promise<HTMLElement | null>} The found HTMLElement or null if timeout.
+                */
+                export async function findElement(selectors, timeout = 10000, interval = 500) {
+                const selectorList = Array.isArray(selectors) ? selectors : [selectors];
+                const startTime = Date.now();
+
+                while (Date.now() - startTime < timeout) {
+                    for (const selector of selectorList) {
+                    const element = document.querySelector(selector);
+                    if (element) {
+                        console.log(`Found element with selector: ${selector}`);
+                        return element;
+                    }
+                    }
+                    await wait(interval);
+                }
+                console.warn(`Element not found within timeout for selectors: ${selectors}`);
+                return null;
+                }
+
+                /**
+                * Clicks an element after waiting for it to be present and clickable.
+                * @param {string | string[]} selectors - CSS selectors for the element to click.
+                * @param {number} timeout - Max time to wait.
+                * @param {number} interval - Check interval.
+                * @returns {Promise<boolean>} True if clicked, false otherwise.
+                */
+                export async function clickElement(selectors, timeout = 10000, interval = 500) {
+                const element = await findElement(selectors, timeout, interval);
+                if (element) {
+                    // Attempt to scroll into view and click
+                    try {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    await wait(200); // Give it a moment to scroll
+                    element.click();
+                    console.log(`Clicked element: ${selectors}`);
+                    return true;
+                    } catch (e) {
+                    console.error(`Error clicking element ${selectors}:`, e);
+                    return false;
+                    }
+                }
+                console.error(`Failed to click element: ${selectors} (element not found or not clickable)`);
+                return false;
+                }
+
+                /**
+                * Types text into an input field.
+                * @param {string | string[]} selectors - CSS selectors for the input field.
+                * @param {string} text - The text to type.
+                * @param {number} timeout - Max time to wait.
+                * @param {number} interval - Check interval.
+                * @returns {Promise<boolean>} True if text typed, false otherwise.
+                */
+                export async function typeIntoElement(selectors, text, timeout = 10000, interval = 500) {
+                const element = await findElement(selectors, timeout, interval);
+                if (element && (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement)) {
+                    try {
+                    element.value = text;
+                    // Dispatch input event to trigger React/Vue listeners if present
+                    element.dispatchEvent(new Event('input', { bubbles: true }));
+                    element.dispatchEvent(new Event('change', { bubbles: true })); // Some frameworks use 'change'
+                    console.log(`Typed "${text}" into element: ${selectors}`);
+                    return true;
+                    } catch (e) {
+                    console.error(`Error typing into element ${selectors}:`, e);
+                    return false;
+                    }
+                }
+                console.error(`Failed to type into element: ${selectors} (element not found or not input/textarea)`);
+                return false;
+                }
+
+                /**
+                * Selects an option in a <select> element.
+                * @param {string | string[]} selectors - CSS selectors for the select element.
+                * @param {string} value - The value of the option to select.
+                * @param {number} timeout - Max time to wait.
+                * @param {number} interval - Check interval.
+                * @returns {Promise<boolean>} True if option selected, false otherwise.
+                */
+                export async function selectOption(selectors, value, timeout = 10000, interval = 500) {
+                    const element = await findElement(selectors, timeout, interval);
+                    if (element && element instanceof HTMLSelectElement) {
+                        try {
+                            const option = Array.from(element.options).find(opt => opt.value === value || opt.text === value);
+                            if (option) {
+                                element.value = option.value;
+                                element.dispatchEvent(new Event('change', { bubbles: true }));
+                                console.log(`Selected option "${value}" in element: ${selectors}`);
+                                return true;
+                            } else {
+                                console.warn(`Option "${value}" not found in select element: ${selectors}`);
+                                return false;
+                            }
+                        } catch (e) {
+                            console.error(`Error selecting option in element ${selectors}:`, e);
+                            return false;
+                        }
+                    }
+                    console.error(`Failed to select option in element: ${selectors} (element not found or not a select)`);
+                    return false;
+                }
+
+
+                /**
+                * Gets the text content of an element.
+                * @param {string | string[]} selectors - CSS selectors for the element.
+                * @param {number} timeout - Max time to wait.
+                * @param {number} interval - Check interval.
+                * @returns {Promise<string|null>} The text content or null.
+                */
+                export async function getElementText(selectors, timeout = 10000, interval = 500) {
+                const element = await findElement(selectors, timeout, interval);
+                return element ? element.textContent?.trim() : null;
+                }
+
+                /**
+                * Checks if an element exists on the page.
+                * @param {string | string[]} selectors - CSS selectors for the element.
+                * @param {number} timeout - Max time to wait.
+                * @param {number} interval - Check interval.
+                * @returns {Promise<boolean>} True if element exists, false otherwise.
+                */
+                export async function checkElementExists(selectors, timeout = 5000, interval = 200) {
+                const element = await findElement(selectors, timeout, interval);
+                return !!element;
+                }
+
+                /**
+                * Generates an appropriate selector (or array of selectors) based on stored settings.
+                * This function is key for selector resilience.
+                * @param {string} selectorKey - The key from settings.selectorResilience (e.g., 'easyApplyButton').
+                * @returns {Promise<string | string[]>} The selector(s) to use.
+                */
+                export async function getResilientSelector(selectorKey) {
+                const settings = await getSettings();
+                const selector = settings?.selectorResilience?.[selectorKey];
+                if (!selector) {
+                    console.warn(`No resilient selector found for key: ${selectorKey}. Using default (if any).`);
+                    // Fallback to a sensible default if the key is missing from settings
+                    // (though the initial state in useStore.js should prevent this for common ones)
+                    return `[data-automation-id="${selectorKey}"]` || `button[name="${selectorKey}"]`;
+                }
+                // If the stored selector is a comma-separated string, split it into an array
+                if (typeof selector === 'string' && selector.includes(',')) {
+                    return selector.split(',').map(s => s.trim());
+                }
+                return selector;
+                }
+│   │   └── messaging.js
+                // src/utils/messaging.js
+                /**
+                * Sends a message to the background script and awaits a response.
+                * @param {object} message - The message object to send. Must contain an 'action' property.
+                * @returns {Promise<any>} A promise that resolves with the background script's response.
+                */
+                export async function sendMessageToBackground(message) {
+                    console.log('Content Script: Sending message to background:', message);
+                    try {
+                    const response = await chrome.runtime.sendMessage(message);
+                    console.log('Content Script: Received response from background:', response);
+                    return response;
+                    } catch (error) {
+                    console.error('Content Script: Error sending message to background:', error);
+                    // Handle cases where the background script might not be listening or fails
+                    return { status: 'error', message: error.message };
+                    }
+                }
+                
+                /**
+                * Asks the background script to generate a cover letter using AI.
+                * @param {object} profileData - The user's profile data.
+                * @param {string} jobDescription - The job description text.
+                * @returns {Promise<string|null>} Generated cover letter text or null.
+                */
+                export async function requestAICoverLetter(profileData, jobDescription) {
+                    return sendMessageToBackground({
+                    action: 'generateCoverLetter',
+                    profile: profileData,
+                    jobDescription: jobDescription
+                    });
+                }
+                
+                /**
+                * Asks the background script to answer a question using AI.
+                * @param {object} profileData - The user's profile data.
+                * @param {string} jobDescription - The job description text.
+                * @param {string} questionText - The question to answer.
+                * @returns {Promise<string|null>} Generated answer text or null.
+                */
+                export async function requestAIQuestionAnswer(profileData, jobDescription, questionText) {
+                    return sendMessageToBackground({
+                    action: 'answerQuestion',
+                    profile: profileData,
+                    jobDescription: jobDescription,
+                    question: questionText
+                    });
+                }
+                
+                /**
+                * Notifies the background script that a new, unhandled question was found.
+                * @param {string} questionText - The text of the new question.
+                * @returns {Promise<any>} Response from background.
+                */
+                export async function notifyNewQuestion(questionText) {
+                    return sendMessageToBackground({
+                    action: 'newQuestionFound',
+                    questionText: questionText
+                    });
+                }
+                
+                /**
+                * Notifies the background script about the outcome of an application attempt.
+                * @param {object} details - Details about the application (e.g., status, jobTitle, company, url, error).
+                * @returns {Promise<any>} Response from background.
+                */
+                export async function logApplicationOutcome(details) {
+                    return sendMessageToBackground({
+                    action: 'logApplication',
+                    ...details
+                    });
+                }
+                
+                /**
+                * Requests profile and settings data from the background script.
+                * @returns {Promise<object>} An object containing profile and settings.
+                */
+                export async function requestProfileAndSettings() {
+                    return sendMessageToBackground({ action: 'getProfileAndSettings' });
+                }
+                
+                /**
+                * Requests a list of known questions and their answers from the background script.
+                * @returns {Promise<object[]>} An array of question objects.
+                */
+                export async function requestKnownQuestions() {
+                    return sendMessageToBackground({ action: 'getKnownQuestions' });
+                }
+│   └── popup/
+│       ├── main.jsx
+                // src/popup/main.jsx
+                import React from 'react'
+                import ReactDOM from 'react-dom/client'
+                import App from './App.jsx'
+                import './index.css'
+
+                ReactDOM.createRoot(document.getElementById('root')).render(
+                <React.StrictMode>
+                    <App />
+                </React.StrictMode>,
+                )
+│       ├── index.css
+                /* src/popup/index.css */
+                @tailwind base;
+                @tailwind components;
+                @tailwind utilities;
+│       ├── App.jsx
+                // src/popup/App.jsx
+                import React, { useEffect } from 'react';
+                import Header from './components/Header';
+                import BotSection from './components/BotSection';
+                import QuestionSection from './components/QuestionSection'; // Added import
+                import ProfileSection from './components/ProfileSection';   // Added import
+                import Settings from './components/Settings';               // Added import
+                import { useStore } from './store/useStore';
+
+                function App() {
+                const { activeSection, loadData } = useStore();
+
+                useEffect(() => {
+                    loadData();
+                }, []);
+
+                const renderSection = () => {
+                    switch (activeSection) {
+                    case 'bot': return <BotSection />;
+                    case 'q': return <QuestionSection />;
+                    case 'profile': return <ProfileSection />;
+                    case 'settings': return <Settings />;
+                    default: return <BotSection />;
+                    }
+                };
+
+                return (
+                    <div className="bg-gray-50 text-gray-800 p-4 font-sans">
+                    <Header />
+                    <main className="mt-4">
+                        {renderSection()}
+                    </main>
+                    </div>
+                );
+                }
+
+                export default App;
+│       ├── components/
+│       │   ├── Header.jsx
+                    import React from 'react';
+                    import { Cog6ToothIcon, UserIcon, QuestionMarkCircleIcon, CpuChipIcon } from '@heroicons/react/24/outline';
+                    import { useStore } from '../store/useStore';
+
+                    const Header = () => {
+                    const { activeSection, setActiveSection } = useStore();
+                    
+                    const navItems = [
+                        { id: 'bot', icon: CpuChipIcon, name: 'Bots' },
+                        { id: 'q', icon: QuestionMarkCircleIcon, name: 'Questions' },
+                        { id: 'profile', icon: UserIcon, name: 'Profile' },
+                    ];
+
+                    return (
+                        <header className="flex justify-between items-center pb-2 border-b border-gray-200">
+                        <h1 className="text-xl font-bold text-blue-600">AutoApply Pro</h1>
+                        <nav className="flex items-center space-x-4">
+                            {navItems.map(item => (
+                            <button 
+                                key={item.id}
+                                onClick={() => setActiveSection(item.id)}
+                                className={`p-2 rounded-full ${activeSection === item.id ? 'bg-blue-100 text-blue-600' : 'hover:bg-gray-100'}`}
+                                title={item.name}
+                            >
+                                <item.icon className="h-6 w-6" />
+                            </button>
+                            ))}
+                            <button 
+                            onClick={() => setActiveSection('settings')}
+                            className={`p-2 rounded-full ${activeSection === 'settings' ? 'bg-blue-100 text-blue-600' : 'hover:bg-gray-100'}`}
+                            title="Settings"
+                            >
+                            <Cog6ToothIcon className="h-6 w-6" />
+                            </button>
+                        </nav>
+                        </header>
+                    );
+                    };
+
+                    export default Header;
+│       │   ├── BotSection.jsx
+                    // src/popup/components/BotSection.jsx
+                    import React, { useState } from 'react';
+                    import { useStore } from '../store/useStore';
+                    import { ChevronDownIcon, ChevronRightIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/solid'; // Added TrashIcon
+
+                    const BotSection = () => {
+                    const { bots, addBot, updateBot, toggleBot, deleteBot } = useStore(); // Added deleteBot
+                    const [expandedBots, setExpandedBots] = useState({});
+
+                    const handleExpand = (id) => {
+                        setExpandedBots(prev => ({ ...prev, [id]: !prev[id] }));
+                    };
+
+                    return (
+                        <div>
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-lg font-semibold">Bots</h2>
+                            <button onClick={addBot} className="p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600" title="Add New Bot">
+                            <PlusIcon className="h-5 w-5" />
+                            </button>
+                        </div>
+                        <ul className="space-y-2">
+                            {bots.map((bot, index) => (
+                            <li key={bot.id} className="bg-white p-3 rounded-lg shadow-sm border border-gray-200">
+                                <div className="flex items-center justify-between">
+                                <div className="flex items-center">
+                                    <span className="mr-2 font-medium">{index + 1}.</span>
+                                    <input
+                                    type="text"
+                                    value={bot.botName}
+                                    onChange={(e) => updateBot(bot.id, { botName: e.target.value })}
+                                    className="font-semibold bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-1"
+                                    />
+                                </div>
+                                <div className="flex items-center space-x-3">
+                                    <label className="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" checked={bot.isOn} onChange={() => toggleBot(bot.id)} className="sr-only peer" />
+                                    <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-2 peer-focus:ring-blue-300 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                    </label>
+                                    <button
+                                    onClick={() => handleExpand(bot.id)}
+                                    className="p-1 rounded-full hover:bg-gray-200"
+                                    title={expandedBots[bot.id] ? "Collapse" : "Expand"}
+                                    >
+                                    {expandedBots[bot.id] ? <ChevronDownIcon className="h-5 w-5 text-gray-600" /> : <ChevronRightIcon className="h-5 w-5 text-gray-600" />}
+                                    </button>
+                                    <button
+                                    onClick={() => deleteBot(bot.id)} // Added delete button
+                                    className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-100"
+                                    title="Delete Bot"
+                                    >
+                                    <TrashIcon className="h-5 w-5" />
+                                    </button>
+                                </div>
+                                </div>
+                                {expandedBots[bot.id] && (
+                                <div className="mt-4 space-y-2">
+                                    <div>
+                                    <label className="block text-sm font-medium text-gray-600">LinkedIn Job Search URL</label>
+                                    <input
+                                        type="text"
+                                        placeholder="https://www.linkedin.com/jobs/search/?keywords=React"
+                                        value={bot.linkedInUrl}
+                                        onChange={(e) => updateBot(bot.id, { linkedInUrl: e.target.value })}
+                                        className="mt-1 w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                    </div>
+                                </div>
+                                )}
+                            </li>
+                            ))}
+                            {bots.length === 0 && (
+                            <p className="text-sm text-gray-500 text-center py-4">No bots configured yet. Click the '+' button to add one!</p>
+                            )}
+                        </ul>
+                        </div>
+                    );
+                    };
+
+                    export default BotSection;
+│       │   ├── QuestionSection.jsx
+                    // src/popup/components/QuestionSection.jsx
+                    import React, { useState } from 'react';
+                    import { useStore } from '../store/useStore';
+                    import { PlusIcon, TrashIcon, ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/solid';
+
+                    const QuestionSection = () => {
+                    const { questions, addQuestion, updateQuestion, deleteQuestion } = useStore();
+                    const [expandedQuestions, setExpandedQuestions] = useState({});
+                    const [newQuestionText, setNewQuestionText] = useState('');
+
+                    const handleExpand = (id) => {
+                        setExpandedQuestions(prev => ({ ...prev, [id]: !prev[id] }));
+                    };
+
+                    const handleAddQuestion = () => {
+                        if (newQuestionText.trim()) {
+                        addQuestion(newQuestionText.trim());
+                        setNewQuestionText('');
+                        }
+                    };
+
+                    return (
+                        <div className="space-y-6">
+                        <h2 className="text-lg font-semibold text-gray-900">Factual Questions to Answer</h2>
+
+                        {/* Manually Add Question */}
+                        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                            <h3 className="text-md font-medium text-gray-800 mb-3">Add Custom Question</h3>
+                            <div className="flex space-x-2">
+                            <input
+                                type="text"
+                                value={newQuestionText}
+                                onChange={(e) => setNewQuestionText(e.target.value)}
+                                placeholder="e.g., 'What is your desired salary?'"
+                                className="flex-grow px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                            />
+                            <button
+                                onClick={handleAddQuestion}
+                                className="p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 flex items-center"
+                                title="Add Question"
+                            >
+                                <PlusIcon className="h-5 w-5" />
+                            </button>
+                            </div>
+                            <p className="text-sm text-gray-500 mt-2">
+                            Use this to pre-define answers for common questions. For AI-generated answers, type `/AI` in the answer field.
+                            </p>
+                        </div>
+
+                        {/* Question List Display */}
+                        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                            <h3 className="text-md font-medium text-gray-800 mb-3">Your Question List</h3>
+                            {questions.length === 0 && (
+                            <p className="text-sm text-gray-500 text-center py-4">No questions added yet. Questions will also appear here dynamically when the bot encounters new ones.</p>
+                            )}
+                            <ul className="space-y-3">
+                            {questions.map((q) => (
+                                <li key={q.id} className="border border-gray-200 p-3 rounded-md bg-gray-50">
+                                <div className="flex items-center justify-between">
+                                    <span className="font-medium text-gray-800">{q.text}</span>
+                                    <div className="flex items-center space-x-2">
+                                    <button
+                                        onClick={() => handleExpand(q.id)}
+                                        className="p-1 rounded-full hover:bg-gray-200"
+                                    >
+                                        {expandedQuestions[q.id] ? <ChevronDownIcon className="h-5 w-5 text-gray-600" /> : <ChevronRightIcon className="h-5 w-5 text-gray-600" />}
+                                    </button>
+                                    <button
+                                        onClick={() => deleteQuestion(q.id)}
+                                        className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-100"
+                                        title="Remove Question"
+                                    >
+                                        <TrashIcon className="h-5 w-5" />
+                                    </button>
+                                    </div>
+                                </div>
+                                {expandedQuestions[q.id] && (
+                                    <div className="mt-3">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Your Answer / Default Value (type "/AI" for AI-generated)</label>
+                                    <textarea
+                                        value={q.answer}
+                                        onChange={(e) => updateQuestion(q.id, { answer: e.target.value })}
+                                        placeholder="Your answer or /AI"
+                                        rows="2"
+                                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                    ></textarea>
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        For checkboxes/dropdowns, provide the exact text to select (e.g., "Yes", "Option A"). For dates, use YYYY-MM-DD.
+                                    </p>
+                                    </div>
+                                )}
+                                </li>
+                            ))}
+                            </ul>
+                        </div>
+                        </div>
+                    );
+                    };
+
+                    export default QuestionSection;
+
+│       │   ├── ProfileSection.jsx
+                    // src/popup/components/ProfileSection.jsx
+                    import React from 'react';
+                    import { useStore } from '../store/useStore';
+                    import { PlusIcon, TrashIcon } from '@heroicons/react/24/solid';
+
+                    const InputField = ({ label, type = 'text', value, onChange, placeholder, className = "" }) => (
+                    <div className="mb-3">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+                        <input
+                        type={type}
+                        value={value}
+                        onChange={onChange}
+                        placeholder={placeholder}
+                        className={`mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${className}`}
+                        />
+                    </div>
+                    );
+
+                    const TextAreaField = ({ label, value, onChange, placeholder, className = "" }) => (
+                    <div className="mb-3">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+                        <textarea
+                        value={value}
+                        onChange={onChange}
+                        placeholder={placeholder}
+                        rows="3"
+                        className={`mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${className}`}
+                        ></textarea>
+                    </div>
+                    );
+
+                    const ProfileSection = () => {
+                    const { profile, updateProfile, addEducation, updateEducation, deleteEducation, addExperience, updateExperience, deleteExperience } = useStore();
+
+                    const handleEducationChange = (id, field, value) => {
+                        updateEducation(id, { [field]: value });
+                    };
+
+                    const handleExperienceChange = (id, field, value) => {
+                        updateExperience(id, { [field]: value });
+                    };
+
+                    return (
+                        <div className="space-y-6">
+                        <h2 className="text-lg font-semibold text-gray-900">Profile Information</h2>
+
+                        {/* Basic Contact Info */}
+                        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                            <h3 className="text-md font-medium text-gray-800 mb-3">Contact Details</h3>
+                            <InputField
+                            label="Full Name"
+                            value={profile.name}
+                            onChange={(e) => updateProfile({ name: e.target.value })}
+                            placeholder="John Doe"
+                            />
+                            <InputField
+                            label="Email Address"
+                            type="email"
+                            value={profile.email}
+                            onChange={(e) => updateProfile({ email: e.target.value })}
+                            placeholder="john.doe@example.com"
+                            />
+                            <InputField
+                            label="Phone Number"
+                            type="tel"
+                            value={profile.phone}
+                            onChange={(e) => updateProfile({ phone: e.target.value })}
+                            placeholder="+1234567890"
+                            />
+                            <InputField
+                            label="LinkedIn Profile URL"
+                            type="url"
+                            value={profile.linkedInUrl}
+                            onChange={(e) => updateProfile({ linkedInUrl: e.target.value })}
+                            placeholder="https://www.linkedin.com/in/your-profile/"
+                            />
+                        </div>
+
+                        {/* Skills and Experience Summary */}
+                        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                            <h3 className="text-md font-medium text-gray-800 mb-3">Summary & Skills</h3>
+                            <InputField
+                            label="Years of Experience"
+                            type="number"
+                            value={profile.yearsExperience}
+                            onChange={(e) => updateProfile({ yearsExperience: e.target.value })}
+                            placeholder="5"
+                            />
+                            <TextAreaField
+                            label="Key Skills (comma-separated)"
+                            value={profile.keySkills}
+                            onChange={(e) => updateProfile({ keySkills: e.target.value })}
+                            placeholder="React, JavaScript, Node.js, AWS, Python"
+                            />
+                        </div>
+
+                        {/* Education Section */}
+                        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                            <div className="flex justify-between items-center mb-3">
+                            <h3 className="text-md font-medium text-gray-800">Education</h3>
+                            <button
+                                onClick={() => addEducation({ degree: '', major: '', university: '', graduationYear: '' })}
+                                className="p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 flex items-center"
+                                title="Add Education"
+                            >
+                                <PlusIcon className="h-4 w-4" />
+                            </button>
+                            </div>
+                            {profile.education.map((edu, index) => (
+                            <div key={edu.id} className="border border-gray-200 p-3 rounded-md mb-3 last:mb-0 bg-gray-50">
+                                <div className="flex justify-end">
+                                <button
+                                    onClick={() => deleteEducation(edu.id)}
+                                    className="text-red-500 hover:text-red-700"
+                                    title="Remove Education"
+                                >
+                                    <TrashIcon className="h-5 w-5" />
+                                </button>
+                                </div>
+                                <InputField
+                                label="Degree"
+                                value={edu.degree}
+                                onChange={(e) => handleEducationChange(edu.id, 'degree', e.target.value)}
+                                placeholder="Bachelor of Science"
+                                />
+                                <InputField
+                                label="Major"
+                                value={edu.major}
+                                onChange={(e) => handleEducationChange(edu.id, 'major', e.target.value)}
+                                placeholder="Computer Science"
+                                />
+                                <InputField
+                                label="University"
+                                value={edu.university}
+                                onChange={(e) => handleEducationChange(edu.id, 'university', e.target.value)}
+                                placeholder="University of Example"
+                                />
+                                <InputField
+                                label="Graduation Year"
+                                type="number"
+                                value={edu.graduationYear}
+                                onChange={(e) => handleEducationChange(edu.id, 'graduationYear', e.target.value)}
+                                placeholder="2020"
+                                />
+                            </div>
+                            ))}
+                            {profile.education.length === 0 && (
+                            <p className="text-sm text-gray-500 text-center py-2">No education added yet.</p>
+                            )}
+                        </div>
+
+                        {/* Experience Section */}
+                        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                            <div className="flex justify-between items-center mb-3">
+                            <h3 className="text-md font-medium text-gray-800">Work Experience</h3>
+                            <button
+                                onClick={() => addExperience({ title: '', company: '', startMonthYear: '', endMonthYear: '', description: '' })}
+                                className="p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 flex items-center"
+                                title="Add Experience"
+                            >
+                                <PlusIcon className="h-4 w-4" />
+                            </button>
+                            </div>
+                            {profile.experience.map((exp, index) => (
+                            <div key={exp.id} className="border border-gray-200 p-3 rounded-md mb-3 last:mb-0 bg-gray-50">
+                                <div className="flex justify-end">
+                                <button
+                                    onClick={() => deleteExperience(exp.id)}
+                                    className="text-red-500 hover:text-red-700"
+                                    title="Remove Experience"
+                                >
+                                    <TrashIcon className="h-5 w-5" />
+                                </button>
+                                </div>
+                                <InputField
+                                label="Job Title"
+                                value={exp.title}
+                                onChange={(e) => handleExperienceChange(exp.id, 'title', e.target.value)}
+                                placeholder="Software Engineer"
+                                />
+                                <InputField
+                                label="Company"
+                                value={exp.company}
+                                onChange={(e) => handleExperienceChange(exp.id, 'company', e.target.value)}
+                                placeholder="Tech Solutions Inc."
+                                />
+                                <InputField
+                                label="Start Date (MM/YYYY)"
+                                value={exp.startMonthYear}
+                                onChange={(e) => handleExperienceChange(exp.id, 'startMonthYear', e.target.value)}
+                                placeholder="01/2020"
+                                />
+                                <InputField
+                                label="End Date (MM/YYYY) (or 'Present')"
+                                value={exp.endMonthYear}
+                                onChange={(e) => handleExperienceChange(exp.id, 'endMonthYear', e.target.value)}
+                                placeholder="01/2024 or Present"
+                                />
+                                <TextAreaField
+                                label="Description (Key responsibilities/achievements)"
+                                value={exp.description}
+                                onChange={(e) => handleExperienceChange(exp.id, 'description', e.target.value)}
+                                placeholder="Developed and maintained web applications..."
+                                />
+                            </div>
+                            ))}
+                            {profile.experience.length === 0 && (
+                            <p className="text-sm text-gray-500 text-center py-2">No work experience added yet.</p>
+                            )}
+                        </div>
+                        </div>
+                    );
+                    };
+
+                    export default ProfileSection;
+│       │   └── Settings.jsx
+                    // src/popup/components/Settings.jsx
+                    import React, { useState } from 'react';
+                    import { useStore } from '../store/useStore';
+                    import { InformationCircleIcon } from '@heroicons/react/24/outline';
+
+                    const InputField = ({ label, type = 'text', value, onChange, placeholder, className = "" }) => (
+                    <div className="mb-3">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+                        <input
+                        type={type}
+                        value={value}
+                        onChange={onChange}
+                        placeholder={placeholder}
+                        className={`mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${className}`}
+                        />
+                    </div>
+                    );
+
+                    const TextAreaField = ({ label, value, onChange, placeholder, rows = "3", className = "" }) => (
+                    <div className="mb-3">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+                        <textarea
+                        value={value}
+                        onChange={onChange}
+                        placeholder={placeholder}
+                        rows={rows}
+                        className={`mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${className}`}
+                        ></textarea>
+                    </div>
+                    );
+
+                    const InfoFloater = ({ title, content }) => {
+                    const [show, setShow] = useState(false);
+                    return (
+                        <div className="relative inline-block ml-1">
+                        <InformationCircleIcon
+                            className="h-5 w-5 text-blue-400 cursor-pointer"
+                            onMouseEnter={() => setShow(true)}
+                            onMouseLeave={() => setShow(false)}
+                        />
+                        {show && (
+                            <div className="absolute left-full ml-2 w-64 p-3 bg-blue-50 border border-blue-200 rounded-lg shadow-lg z-10 text-sm text-blue-800">
+                            <h4 className="font-semibold mb-1">{title}</h4>
+                            <p>{content}</p>
+                            </div>
+                        )}
+                        </div>
+                    );
+                    };
+
+                    const Settings = () => {
+                    const { settings, updateSettings } = useStore();
+                    const [expandedSelectors, setExpandedSelectors] = useState(false);
+
+                    const handleSelectorChange = (key, value) => {
+                        updateSettings({
+                        selectorResilience: {
+                            ...settings.selectorResilience,
+                            [key]: value,
+                        },
+                        });
+                    };
+
+                    return (
+                        <div className="space-y-6">
+                        <h2 className="text-lg font-semibold text-gray-900">Global Settings</h2>
+
+                        {/* API Keys Section */}
+                        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                            <h3 className="text-md font-medium text-gray-800 mb-3">API Keys</h3>
+                            <InputField
+                            label="Google Sheet Link"
+                            type="url"
+                            value={settings.googleSheetLink}
+                            onChange={(e) => updateSettings({ googleSheetLink: e.target.value })}
+                            placeholder="https://docs.google.com/spreadsheets/d/..."
+                            />
+                            <InputField
+                            label="Google Sheet API Key"
+                            type="password" // Use password type for sensitivity
+                            value={settings.googleSheetApiKey}
+                            onChange={(e) => updateSettings({ googleSheetApiKey: e.target.value })}
+                            placeholder="AIzaSyB..."
+                            className="pr-8" // Space for info icon
+                            />
+                            <InfoFloater
+                            title="How to get Google Sheet API Key"
+                            content="1. Go to Google Cloud Console. 2. Create a new project. 3. Enable Google Sheets API. 4. Go to Credentials -> Create Credentials -> API Key. 5. Restrict the API key to Google Sheets API and your domain if possible."
+                            />
+
+                            <InputField
+                            label="Google Gemini API Key"
+                            type="password" // Use password type for sensitivity
+                            value={settings.geminiApiKey}
+                            onChange={(e) => updateSettings({ geminiApiKey: e.target.value })}
+                            placeholder="AIzaSyC..."
+                            className="pr-8" // Space for info icon
+                            />
+                            <InfoFloater
+                            title="How to get Google Gemini API Key"
+                            content="1. Go to Google AI Studio or Google Cloud Console. 2. Navigate to Gemini API or Generative AI. 3. Generate an API Key. Ensure it has access to the Gemini model."
+                            />
+                        </div>
+
+                        {/* AI Prompt Customization */}
+                        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                            <h3 className="text-md font-medium text-gray-800 mb-3">AI Prompt Customization</h3>
+                            <TextAreaField
+                            label="/AI Cover Letter Prompt"
+                            value={settings.aiCoverLetterPrompt}
+                            onChange={(e) => updateSettings({ aiCoverLetterPrompt: e.target.value })}
+                            placeholder="Write a cover letter using a Humane tone based on {profile.json} and {Job Description}."
+                            rows="5"
+                            />
+                            <p className="text-sm text-gray-500 mb-4">
+                            Use <code>{`{profile.json}`}</code> and <code>{`{Job Description}`}</code> as placeholders.
+                            </p>
+
+                            <TextAreaField
+                            label="/AI Question Prompt"
+                            value={settings.aiQuestionPrompt}
+                            onChange={(e) => updateSettings({ aiQuestionPrompt: e.target.value })}
+                            placeholder="Answer this question: {the question} using a Humane tone based on {profile.json} and {Job Description}."
+                            rows="5"
+                            />
+                            <p className="text-sm text-gray-500">
+                            Use <code>{`{the question}`}</code>, <code>{`{profile.json}`}</code>, and <code>{`{Job Description}`}</code> as placeholders.
+                            </p>
+                        </div>
+
+                        {/* Selector Resilience Editor */}
+                        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                            <div className="flex justify-between items-center mb-3">
+                            <h3 className="text-md font-medium text-gray-800">Selector Resilience Editor</h3>
+                            <button
+                                onClick={() => setExpandedSelectors(!expandedSelectors)}
+                                className="p-1 rounded-full hover:bg-gray-200"
+                            >
+                                {expandedSelectors ? (
+                                <InformationCircleIcon className="h-5 w-5 text-blue-500" />
+                                ) : (
+                                <InformationCircleIcon className="h-5 w-5 text-gray-600" />
+                                )}
+                            </button>
+                            </div>
+                            <InfoFloater
+                            title="Understanding Selectors"
+                            content="These are CSS or XPath selectors used by the bot to find elements on LinkedIn. If the bot stops working, LinkedIn's UI might have changed, and you may need to update these. Use Chrome DevTools (Inspect Element) to find unique attributes (e.g., aria-label, data-test-id, id) for buttons like 'Easy Apply', 'Next', 'Submit', form fields, etc. Copy 'CSS Selector' or 'Full XPath'."
+                            />
+                            <p className="text-sm text-gray-500 mt-2 mb-4">
+                            Advanced setting: Edit these only if the bot is failing to find elements.
+                            </p>
+                            <button
+                            onClick={() => setExpandedSelectors(!expandedSelectors)}
+                            className="mb-4 w-full text-center py-2 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
+                            >
+                            {expandedSelectors ? 'Hide Advanced Selectors' : 'Show Advanced Selectors'}
+                            </button>
+
+                            {expandedSelectors && (
+                            <div className="space-y-3 pt-2 border-t border-gray-200">
+                                {Object.entries(settings.selectorResilience).map(([key, value]) => (
+                                <InputField
+                                    key={key}
+                                    label={key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())} // Converts camelCase to "Camel Case"
+                                    value={value}
+                                    onChange={(e) => handleSelectorChange(key, e.target.value)}
+                                    placeholder={`CSS/XPath for ${key}`}
+                                />
+                                ))}
+                            </div>
+                            )}
+                        </div>
+                        </div>
+                    );
+                    };
+
+                    export default Settings;
+
+│       └── store/
+│           └── useStore.js (To Be Adjusted)
+                    import { create } from 'zustand';
+                    import { getStorage, setStorage } from '../../shared/storage';
+
+                    export const useStore = create((set, get) => ({
+                    // State
+                    activeSection: 'bot', // Default active section
+                    bots: [],
+                    questions: [],
+                    profile: {
+                        name: '',
+                        email: '',
+                        phone: '',
+                        linkedInUrl: '',
+                        yearsExperience: '',
+                        keySkills: '', // Will be stored as a comma-separated string
+                        education: [],
+                        experience: [],
+                    },
+                    settings: {
+                        googleSheetLink: '',
+                        googleSheetApiKey: '',
+                        geminiApiKey: '',
+                        selectorResilience: { // Default LinkedIn selectors (example)
+                        easyApplyButton: 'button[aria-label^="Easy Apply to"]',
+                        nextButton: 'button[aria-label="Next"]',
+                        reviewButton: 'button[aria-label="Review your application"]',
+                        submitButton: 'button[aria-label="Submit application"]',
+                        followCompanyCheckbox: 'input[type="checkbox"][name="follow-company"]',
+                        // Add more as we identify them during automation development
+                        },
+                        aiCoverLetterPrompt: "Write a cover letter using a Humane tone based on {profile.json} and {Job Description}.",
+                        aiQuestionPrompt: "Answer this question: {the question} using a Humane tone based on {profile.json} and {Job Description}.",
+                    },
+                    
+                    // Actions
+                    setActiveSection: (section) => set({ activeSection: section }),
+
+                    // Load initial data from chrome.storage
+                    loadData: async () => {
+                        const [bots, questions, profile, settings] = await Promise.all([
+                        getStorage('bots'),
+                        getStorage('questions'),
+                        getStorage('profile'),
+                        getStorage('settings'),
+                        ]);
+                        set({
+                        bots: bots || [],
+                        questions: questions || [],
+                        profile: { ...get().profile, ...profile }, // Merge to keep defaults if no saved data
+                        settings: { ...get().settings, ...settings }, // Merge to keep defaults
+                        });
+                    },
+
+                    // Bot actions
+                    addBot: () => {
+                        const newBot = { id: Date.now(), botName: 'New Bot', linkedInUrl: '', isOn: false };
+                        set(state => {
+                        const updatedBots = [...state.bots, newBot];
+                        setStorage({ bots: updatedBots }); // Persist immediately
+                        return { bots: updatedBots };
+                        });
+                    },
+                    updateBot: (id, updatedData) => {
+                        set(state => {
+                        const updatedBots = state.bots.map(bot => bot.id === id ? { ...bot, ...updatedData } : bot);
+                        setStorage({ bots: updatedBots }); // Persist immediately
+                        return { bots: updatedBots };
+                        });
+                    },
+                    toggleBot: (id) => {
+                        set(state => {
+                        const updatedBots = state.bots.map(bot => bot.id === id ? { ...bot, isOn: !bot.isOn } : bot);
+                        const targetBot = updatedBots.find(b => b.id === id);
+                        if (targetBot) {
+                            // Send message to background script to start/stop the actual automation
+                            chrome.runtime.sendMessage({ action: "toggleBot", bot: targetBot });
+                        }
+                        setStorage({ bots: updatedBots }); // Persist immediately
+                        return { bots: updatedBots };
+                        });
+                    },
+                    deleteBot: (id) => {
+                        set(state => {
+                        const updatedBots = state.bots.filter(bot => bot.id !== id);
+                        setStorage({ bots: updatedBots });
+                        return { bots: updatedBots };
+                        });
+                    },
+
+                    // Question actions
+                    addQuestion: (questionText, answer = '') => {
+                        set(state => {
+                        const newQuestion = { id: Date.now(), text: questionText, answer: answer };
+                        const updatedQuestions = [...state.questions, newQuestion];
+                        setStorage({ questions: updatedQuestions });
+                        return { questions: updatedQuestions };
+                        });
+                    },
+                    updateQuestion: (id, updatedData) => {
+                        set(state => {
+                        const updatedQuestions = state.questions.map(q => q.id === id ? { ...q, ...updatedData } : q);
+                        setStorage({ questions: updatedQuestions });
+                        return { questions: updatedQuestions };
+                        });
+                    },
+                    deleteQuestion: (id) => {
+                        set(state => {
+                        const updatedQuestions = state.questions.filter(q => q.id !== id);
+                        setStorage({ questions: updatedQuestions });
+                        return { questions: updatedQuestions };
+                        });
+                    },
+                    // We'll also need a way to mark questions as "new/unanswered" for the badge
+                    // This might involve adding a 'isNew' flag to question objects and a counter in the store.
+                    // For now, let's assume all questions in the list are "answered" by the user.
+                    // The content script will handle dynamically adding truly new ones.
+
+                    // Profile actions
+                    updateProfile: (updatedData) => {
+                        set(state => {
+                        const updatedProfile = { ...state.profile, ...updatedData };
+                        setStorage({ profile: updatedProfile });
+                        return { profile: updatedProfile };
+                        });
+                    },
+                    addEducation: (education) => {
+                        set(state => {
+                        const updatedEducation = [...state.profile.education, { id: Date.now(), ...education }];
+                        const updatedProfile = { ...state.profile, education: updatedEducation };
+                        setStorage({ profile: updatedProfile });
+                        return { profile: updatedProfile };
+                        });
+                    },
+                    updateEducation: (id, updatedData) => {
+                        set(state => {
+                        const updatedEducation = state.profile.education.map(edu => edu.id === id ? { ...edu, ...updatedData } : edu);
+                        const updatedProfile = { ...state.profile, education: updatedEducation };
+                        setStorage({ profile: updatedProfile });
+                        return { profile: updatedProfile };
+                        });
+                    },
+                    deleteEducation: (id) => {
+                        set(state => {
+                        const updatedEducation = state.profile.education.filter(edu => edu.id !== id);
+                        const updatedProfile = { ...state.profile, education: updatedEducation };
+                        setStorage({ profile: updatedProfile });
+                        return { profile: updatedProfile };
+                        });
+                    },
+                    addExperience: (experience) => {
+                        set(state => {
+                        const updatedExperience = [...state.profile.experience, { id: Date.now(), ...experience }];
+                        const updatedProfile = { ...state.profile, experience: updatedExperience };
+                        setStorage({ profile: updatedProfile });
+                        return { profile: updatedProfile };
+                        });
+                    },
+                    updateExperience: (id, updatedData) => {
+                        set(state => {
+                        const updatedExperience = state.profile.experience.map(exp => exp.id === id ? { ...exp, ...updatedData } : exp);
+                        const updatedProfile = { ...state.profile, experience: updatedExperience };
+                        setStorage({ profile: updatedProfile });
+                        return { profile: updatedProfile };
+                        });
+                    },
+                    deleteExperience: (id) => {
+                        set(state => {
+                        const updatedExperience = state.profile.experience.filter(exp => exp.id !== id);
+                        const updatedProfile = { ...state.profile, experience: updatedExperience };
+                        setStorage({ profile: updatedProfile });
+                        return { profile: updatedProfile };
+                        });
+                    },
+
+                    // Settings actions
+                    updateSettings: (updatedData) => {
+                        set(state => {
+                        const updatedSettings = { ...state.settings, ...updatedData };
+                        setStorage({ settings: updatedSettings });
+                        return { settings: updatedSettings };
+                        });
+                    },
+                    }));
+
+└──

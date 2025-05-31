@@ -1,0 +1,8 @@
+Code Refactoring and Modularity: As the content/main.js grows, break it down into smaller, testable modules (e.g., dom-interactor.js, form-filler.js, job-parser.js).
+
+Consider adding subtle UI indicators in the popup (e.g., a "Bot is running..." status, number of jobs processed, next job countdown).
+
+
+
+Pointer
+useStore - Selector Defaults: Added a selectorResilience object within settings with example default CSS selectors. We'll populate this more accurately as we build the automation.

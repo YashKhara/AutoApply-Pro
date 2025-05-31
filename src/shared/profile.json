@@ -1,0 +1,155 @@
+{
+  "name": "Yash Khara",
+  "email": "kharayash11@gmail.com",
+  "phone": "+918981313149",
+  "linkedin_url": "https://www.linkedin.com/in/yash-khara",
+  "yearsExperience": "6",
+  "headline": "Marketing Manager",
+  "summary": "I am a seasoned marketing professional with a passion for driving growth and innovation. With a strong foundation in digital marketing and a keen eye for data-driven strategies, I have successfully led campaigns that have exceeded targets and delivered measurable results.",
+  "keySkills": ["SEO",
+        "Google Ads",
+        "Email Marketing",
+        "Analytics",
+        "CRM",
+        "HubSpot",
+        "Automation",
+        "CRO",
+        "Google Analytics",
+        "Content Marketing",
+        "Lead Generation",
+        "Social Media Marketing",
+        "Performance Marketing", 
+        "B2B Marketing", 
+        "HubSpot",
+        "Salesforce",
+        "PPC",
+        "Digital Marketing",
+        "Marketing Strategy",
+        "Campaign Management",
+        "Market Research",
+        "A/B Testing",
+        "Data Analysis",
+        "Project Management",
+        "Team Leadership",
+        "Budget Management",
+        "Conversion Optimization",
+        "Multi-Channel Marketing",
+        "Lead Nurturing",
+        "Brand Strategy",
+        "Customer Segmentation",
+        "Online Advertising",
+        "Market Analysis",
+        "Customer Relationship Management",
+        "Growth Hacking",
+        "Content Strategy",
+        "Email Campaigns",
+        "Marketing Automation",
+        "Social Media Strategy",
+        "B2B Sales",
+        "Customer Journey Mapping",
+        "Search Engine Optimization",
+        "Pay-Per-Click Advertising",
+        "Digital Campaigns",
+        "Lead Generation Strategies",
+        "Sales Strategy",
+        "Data Visualization",
+        "Customer Insights",
+        "Sales Forecasting",
+        "Market Segmentation",
+        "Email Deliverability",
+        "Performance Analysis",
+        "ROI Analysis",
+        "User Experience (UX)",
+        "Content Creation",
+        "Sales Operations",
+        "Lead Scoring",
+        "Sales Funnel Management",
+        "Market Positioning",
+        "Product Launches",
+        "Competitive Analysis",
+        "Data-Driven Marketing",
+        "Performance Metrics",
+        "Sales Funnel Optimization",
+        "Customer Acquisition",
+        "Customer Retention",
+        "Sales Enablement",
+        "Event Marketing",
+        "Product Marketing",
+        "Landing Page Optimization"],
+  "education": [
+    {
+      "id": "edu_initial_1",
+      "degree": "Bachelor of Technology",
+      "major": "Mechanical Engineering",
+      "university": "West Bengal University of Technology, Kolkata",
+      "graduationYear": "2017",
+      "dates": {
+                "start": "Aug 2013",
+                "end": "Jun 2017"
+            }
+    }
+  ],
+  "experience": [
+    {
+      "id": "exp_initial_1",
+      "title": "Digital Marketing Manager",
+      "company": "DRIP CAPITAL, California",
+      "startMonthYear": "Oct 2021",
+      "endMonthYear": "Jun 2023",
+      "description": [
+        "\u2022 Led the digital marketing team in developing and executing comprehensive digital marketing strategies to drive growth and increase brand awareness.",
+        "\u2022 Successfully implemented SEM, and social media campaigns that resulted in a 25% increase in website traffic and a 30% boost in conversion rates.",
+        "\u2022 Managed the company's social media accounts and created engaging content to increase brand awareness and drive traffic to the website.",
+        "\u2022 Conducted A/B testing to optimize landing pages and improve user engagement.",
+        "\u2022 Collaborated with the sales team to develop targeted email campaigns and nurture leads through the sales funnel.",
+        "\u2022 Analyzed website and campaign analytics to identify trends and optimize marketing strategies."
+      ]
+    },
+    {
+      "id": "exp_initial_2",
+      "title": "Sr. Associate Digital Marketing",
+      "company": "DRIP CAPITAL, California",
+      "startMonthYear": "Aug 2019",
+      "endMonthYear": "Sep 2021",
+      "description": [
+        "\u2022 Launched spearhead campaigns for the company's product launch in new markets and increased the company's lead generation by 4.8x.",
+        "\u2022 Optimized targeting strategies through data-driven bidding and audience segmentation to achieve 60% reduction in cost per conversion.",
+        "\u2022 Managed the company's CRM system to ensure seamless integration of marketing and sales data.",
+        "\u2022 Exceeded campaign performance goals consistently while managing a monthly budget of $100,000.",
+        "\u2022 Developed and executed email campaigns that resulted in a 20% increase in open rates and a 15% boost in click-through rates.",
+        "\u2022 Received *Employee of the Year* recognition for consistently exceeding campaign performance goals and driving significant ROI."
+      ]
+    },
+    {
+      "id": "exp_initial_3",
+      "title": "Digital Marketing Analyst",
+      "company": "BYJU's, Bangalore",
+      "startMonthYear": "Aug 2017",
+      "endMonthYear": "Aug 2019",
+      "description": [
+        "\u2022 Successfully implemented hyperlocal campaigns for the company's flagship product and increased the company's lead inflow by 7x.",
+        "\u2022 Developed and executed Google campaigns along with several SMM campaign on Facebook, LinkedIn & Quora that resulted in 10x increase in brand awareness.",
+        "\u2022 Improved the company's market placement and messaging which resulted in 50% reduction in cost per lead."
+      ]
+    },
+    {
+      "id": "exp_initial_4",
+      "title": "Seo Intern",
+      "company": "BYJU's, Bangalore",
+      "startMonthYear": "Feb 2017",
+      "endMonthYear": "May 2017",
+      "description": [
+        "\u2022 Conducted extensive keyword research and SEO optimizations to boost organic search rankings on SERP.",
+        "\u2022 Produced engaging blog posts and social media content, which increased audience engagement on website.",
+        "\u2022 Led a team of 10 content creators, ensuring efficient content production and strategic publication."
+      ]
+    }
+  ],
+  "awards": [
+    {
+      "id": "award_initial_1",
+      "title": "Employee of the Year",
+      "description": "Received *Employee of the Year* recognition for consistently exceeding campaign performance goals and driving significant ROI."
+    }
+  ]
+}   

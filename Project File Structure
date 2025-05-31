@@ -1,0 +1,41 @@
+AutoApply-Pro/
+├── package.json
+├── vite.config.js
+├── tailwind.config.js
+├── postcss.config.js
+├── README.md
+├── public/
+│   ├── manifest.json
+│   ├── icons/
+│   │   ├── icon16.png
+│   │   ├── icon48.png
+│   │   └── icon128.png
+│   └── popup.html
+├── src/
+│   ├── background/
+│   │   └── main.js
+│   ├── content/
+│   │   └── main.js
+│   ├── shared/
+│   │   ├── storage.js
+│   │   ├── profile.json
+│   │   └── api.js
+│   ├── background.js
+│   ├── content.js
+│   ├── utils/
+│   │   └── ai.js
+│   │   └── googleSheets.js
+│   │   └── domHelpers.js
+│   └── popup/
+│       ├── main.jsx
+│       ├── index.css
+│       ├── App.jsx
+│       ├── components/
+│       │   ├── Header.jsx
+│       │   ├── BotSection.jsx
+│       │   ├── QuestionSection.jsx
+│       │   ├── ProfileSection.jsx
+│       │   └── Settings.jsx
+│       └── store/
+│           └── useStore.js
+└──

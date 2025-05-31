@@ -1,0 +1,201 @@
+Project Name: AutoApply Pro
+
+Goal: Develop a robust, intelligent, and user-friendly Chrome browser extension, "AutoApply Pro," that automates the LinkedIn "Easy Apply" job application process. The extension will mimic human interaction, integrate AI for personalized responses, and provide comprehensive logging and user configuration.
+
+Development Approach: The AI Agent is expected to understand and implement a modern browser extension architecture (e.g., Manifest V3), utilizing best practices for UI/UX, background scripting, content scripting, data persistence, and external API integrations. The development should prioritize modularity, maintainability, and resilience against external website changes.
+
+Part 1: Core Project Understanding & High-Level Architecture
+
+1.1. Project Summary:
+-- "AutoApply Pro" is a Chrome extension designed to streamline LinkedIn job applications. It automates the "Easy Apply" process by filling forms with user-provided data and AI-generated responses, logging outcomes, and providing extensive configuration options.
+1.2. Key Architectural Components:
+-- Extension Popup (UI): The primary user interface for configuration and monitoring.
+-- Background Script: Handles long-running tasks, inter-component communication, API calls, and orchestrates the automation logic.
+-- Content Script: Injects into LinkedIn pages to interact with the DOM (identify elements, fill forms, trigger clicks).
+-- Data Persistence: Securely stores user settings, profile.json, factual answers, and application history (likely chrome.storage.local or chrome.storage.sync).
+-- External Integrations: Google Gemini API for AI, Google Sheets API for logging.
+1.3. Overall Workflow Philosophy:
+-- The extension will operate in a new, dedicated Chrome window to avoid disrupting the user's primary browse session. Automation will be designed to mimic human behavior (randomized delays, varying interaction patterns) to minimize detection. Robust error handling will ensure the bot recovers and continues efficiently.
+
+Part 2: Detailed UI/UX Specifications (Frontend Development)
+
+2.1. General Design Principles:
+-- Aesthetic: Follows "Material 3-like" design principles – modern, clean, intuitive, with appropriate use of shadows, spacing, and typography. No need for strict Material 3 component library, but maintain the overall feel.
+-- Responsiveness: The UI should be responsive within the extension popup's typical dimensions.
+2.2. Header (Top Navigation Bar):
+-- Heading: Prominent "AutoApply Pro" title.
+-- Navigation: Three primary sections accessible via clickable tabs/icons:
+--- Bot Section (Bot Icon): Default landing view.
+--- Q Section (Q Icon): For dynamic question management.
+--- Profile Section (User/Profile Icon): For personal data management.
+-- Settings Button (Gear Icon): Located on the far right of the header, provides access to advanced configuration.
+2.3. Section 1: Bot Section
+-- Title: "Bots"
+-- Add Bot Button ([+]):
+--- Functionality: When clicked, adds a new bot entry to the list.
+--- Default State: New entry defaults to "OFF" and is expandable.
+-- Bot List Display:
+--- Format: Numbered list (e.g., "1. {Bot Name} ON/OFF [>]").
+--- Bot Name: Editable text field.
+--- ON/OFF Toggle: Clearly visible toggle switch to activate/deactivate the bot.
+--- Expand Button ([>]):
+---- Functionality: Expands to reveal bot-specific settings.
+---- Revealed Fields (Autosave):
+----- Bot Name (Editable): The name of this bot configuration.
+----- Specified LinkedIn URL (Editable): The LinkedIn job search URL specific to this bot (e.g., pre-filtered by keywords, location). This URL is where the bot will start its search.
+2.4. Section 2: Q Section (Questions)
+-- Title: "Factual Questions to Answer"
+-- Purpose: This section will display a list of questions that the bot has encountered during applications which require user input.
+-- Dynamic Question Addition:
+--- Mechanism: The bot will search for "new questions" within LinkedIn application forms in this list. If a question is found, the bot will use the given answer from this list. If not found, the bot will dynamically add it to this list.
+--- Definition of "New Question": An input or textarea field on a LinkedIn application form that is marked as mandatory/required (e.g., required attribute, aria-required="true", or visual indicators like an asterisk * in the label/placeholder) AND does not already hold a pre-populated value (i.e., is empty).
+--- Skipping Optional Questions: All questions identified as optional will be skipped by the bot and not added to this list.
+-- User Interaction for New Questions (During Application):
+--- Pause Automation: When a new, mandatory question appears on LinkedIn during an application, which is not already present in the list, the bot will pause the current application process.
+--- Prominent Modal Pop-up: A highly visible, red-themed modal pop-up will appear on the LinkedIn page (or overlaid on the browser window) to notify the user.
+--- Modal Content: Clearly displays the new question, the input field for user's answer, a submit button, and options.
+--- User Input Options:
+---- Manual Answer: A text field where the user can type their answer.
+---- /AI Cue: If the user types /AI into the answer field, it's a cue for the bot to use the AI Agent (Google Gemini) to generate an answer for that specific question using the configured /AI question prompt.
+--- Modal Dismissal: If the user dismisses the modal without providing an answer (e.g., clicks close or "X" button), the bot will understand this as a signal to discard the current application and move to the next eligible job.
+-- Q List Display:
+--- List Format: Each entry represents a unique question (based on its label or text).
+--- Question Text: The exact text of the question extracted from LinkedIn.
+--- User-Provided Answer/Default Value:
+---- For text fields: A text area where the user can type their answer or "/AI" to indicate AI generation.
+---- For other input types (checkboxes, dropdowns, date pickers): A text field where the user provides a default value (e.g., "true", "Yes", "2025-05-30", "Option A"). The bot will then interpret this text value for the corresponding input type during automation.
+--- Autosave: All answers/default values entered here should autosave.
+-- Visual Cues: A badge on the "Q" section tab (in the header navigation) will indicate the number of new, unanswered questions awaiting user attention.
+2.5. Section 3: Profile Section
+-- Title: "Profile"
+-- Purpose: Provides a user-friendly interface to edit the profile.json data.
+-- Interface: A structured form (not raw JSON editor) with clearly labeled fields.
+-- Example Fields (expandable as needed based on common LinkedIn fields):
+--- "Name" (text)
+--- "Email" (text)
+--- "Phone" (text)
+--- "LinkedIn URL" (text)
+--- "Years Experience" (number)
+--- "Key Skills" (comma-separated text, ideally rendered as tag inputs)
+--- "Education" (e.g., nested fields for "Degree", "Major", "University", "Graduation Year")
+--- "Experience 1" (e.g., nested fields for "Title", "Company", "Start Month/Year", "End Month/Year", "Description")
+--- "Experience 2" (e.g., nested fields for "Title", "Company", "Start Month/Year", "End Month/Year", "Description")
+--- "Experience 3" (e.g., nested fields for "Title", "Company", "Start Month/Year", "End Month/Year", "Description")
+--- [Add Exp] button: To enable the user to add more experience blocks dynamically.
+-- Serialization: The form data will automatically serialize to and deserialize from a profile.json file stored internally.
+-- Autosave: Changes to the profile form should autosave automatically.
+2.6. Settings View (Accessed via Header Button)
+-- Layout: A dedicated view for global extension settings.
+-- Fields:
+--- Google Sheet Link (Text Input): For the user to paste the URL of their Google Spreadsheet for logging.
+--- Google Sheet API Key (Text Input, hidden input type recommended): For authentication with the Google Spreadsheets.
+---- Instruction Floater (i button): Next to the field, an info icon will display a floater with clear, step-by-step instructions on how to obtain a Google Sheet's API key.
+--- Google Gemini API Key (Text Input, hidden input type recommended): For authentication with the Gemini AI model.
+---- Instruction Floater (i button): Next to the field, an info icon will display a floater with clear, step-by-step instructions on how to obtain a Google Gemini API key.
+--- Selector Resilience Editor (Text Area/List of Inputs):
+---- Purpose: Allows advanced users to view and edit the CSS/XPath selectors used by the bot to identify key elements on LinkedIn (e.g., "Easy Apply" button, "Next" button, form fields).
+---- Instruction Floater (i button): Next to this field, an info icon will display a floater with detailed instructions on "what to find" (e.g., "look for the unique aria-label attribute on the Easy Apply button") and "how to find and paste" (e.g., "use Chrome DevTools to inspect element, copy full XPath or relevant CSS selector").
+---- Health Notification: If a configured selector fails during operation, the corresponding selector field in this settings view should turn red, and a badge should appear on the main Settings button in the header, indicating an issue.
+--- /AI Cover Letter Prompt (Text Area):
+---- Purpose: Customizable prompt for the AI to generate cover letters.
+---- Dynamic Placeholders: Supports placeholders like {profile.json} (inserts a JSON string of the user's profile data) and {Job Description} (inserts the extracted job description text).
+---- Example Default: "Write a cover letter using a Humane tone based on {profile.json} and {Job Description}."
+--- /AI Question Prompt (Text Area):
+---- Purpose: Customizable prompt for the AI to answer subjective questions encountered in the "Q" section.
+---- Dynamic Placeholders: Supports placeholders like {the question} (inserts the actual question text from LinkedIn), {profile.json}, and {Job Description}.
+---- Example Default: "Answer this question: {the question} using a Humane tone based on {profile.json} and {Job Description}."
+
+Part 3: Detailed Bot Logic and Workflow (Backend & Automation)
+
+3.1. User Initiates Automation:
+-- User clicks the ON/OFF toggle button for individual bots in the extension's popup. Setting a bot to "ON" initiates its automation process.
+-- The extension loads all pre-configured settings: job keywords (from bot settings), profile.json data, factual answers (from Q section), AI API preferences, and "follow company" preference for the activated bot.
+3.2. Navigate to Job Search Page:
+-- A new Chrome window is opened and directed to the specified LinkedIn job search URL (from the active bot's settings) by each bot set to ON.
+-- Intelligent Scrolling: The bot will intelligently scroll the page to load more job listings, mimicking human interaction. This includes:
+--- Randomized scroll distances.
+--- Randomized scroll speeds.
+--- Randomized delays between scrolls.
+3.3. Identify and Filter Jobs:
+-- The content script scans the loaded job listings on the page.
+-- Extraction: For each job, it extracts key details: Job Title, Company Name, Job URL, and "Easy Apply" status.
+-- Filtering: Filters out jobs that:
+--- Do not match user-defined criteria (e.g., job keywords from bot settings).
+--- Have already been applied to (based on a stored history log).
+3.4. Process Each Eligible Job (Loop):
+-- The extension begins a loop, selecting one eligible job at a time.
+-- Randomized Delay: Introduces a small, randomized delay (e.g., 5-15 seconds) before starting each new application to appear more human.
+3.5. Open Job Details & Initiate Application:
+-- The content script clicks on the selected job listing in the search results to open its detailed view.
+-- It then locates and clicks the "Easy Apply" button within the job details panel.
+--- Selector Flexibility: Uses the configured selector (e.g., <button aria-label="Easy Apply to {JOB TITLE} at {Company}" id="jobs-apply-button-id" ...>) for the "Easy Apply" button.
+-- The LinkedIn application form modal or pop-up appears.
+3.6. Fill Out the Application Form (Page by Page):
+-- The extension iteratively processes each page of the multi-step application form.
+-- Factual Questions:
+--- For fields like "Phone Number," "Years of Experience," "Education," etc., it automatically fills in your pre-saved factual information from profile.json or the "Q" section. It prioritizes fuzzy matches for field labels/names to handle variations (e.g., "Phone Number" vs. "Your Phone #").
+-- Resume Handling:
+--- It will identify if LinkedIn requires a resume. It will then select the pre-uploaded resume on LinkedIn (assuming the user has one set as default or previously uploaded). The bot will not attempt to upload a local file.
+-- Cover Letter Handling:
+--- File Upload: If the form requires a cover letter file upload, the bot will skip it.
+--- Text Field: If it's a text field, the bot will:
+---- Extract the Job Description from the current job listing.
+---- Send the Job Description, the profile.json data, and the user's /AI cover letter prompt to Google Gemini.
+---- Populate the text area with the AI-generated tailored response.
+-- Subjective Questions (AI-Powered or User-Provided):
+--- Extraction: The bot extracts the specific subjective question text and the Job Description from the current job.
+--- Decision Logic:
+---- If the question is present in the "Q" section with a pre-saved answer, use that answer.
+---- If the question is present in the "Q" section with /AI as its answer, or if it's a new mandatory question, trigger the user interaction flow (pause, modal pop-up, await user input or /AI cue).
+---- If the user provides /AI as an answer (either in the modal or pre-configured in Q section):
+----- Send the extracted question, Job Description, profile.json summary, and the user's /AI question prompt to Google Gemini.
+----- The AI generates a tailored, "humane" response based on the context.
+----- The extension then populates the corresponding text area with the AI-generated answer.
+--- Other Input Types: For mandatory checkboxes, dropdowns, or date pickers identified as "new" and present in the "Q" list, the bot will use the default text value provided by the user in the "Q" section and attempt to select/fill the appropriate option based on that text.
+-- Navigation: It clicks "Next" or "Review" buttons to proceed to the subsequent form page, incorporating small, randomized delays.
+3.7. Final Submission:
+-- Once all form fields are filled and the final review page is reached:
+--- The extension locates and unchecks any "Follow company" or similar options (based on configured selectors).
+--- Locates and clicks the "Submit Application" button (using configured selectors).
+3.8. Log and Continue/Complete:
+-- Logging: The extension records the outcome of the application (success or failure) and the job details (Bot name, Job Title, Company, Job URL) with serial numbering. This data is written to the user-specified Google Spreadsheet (universally shared with "Anyone with the link can edit" access).
+-- Cleanup: It then closes the application modal or navigates back to the job search results page.
+-- Loop Continuation:
+--- The process repeats from Step 4 for the next eligible job.
+--- Random Pauses Between Jobs: Introduces random pauses between jobs in the range of 30 seconds to 2 minutes to further mimic human behavior and avoid detection.
+--- Revisiting Search URL: If all jobs on the current page have been processed, the bot revisits the specified LinkedIn job search URL in the same Chrome window (restarting from Step 2b) to find new listings.
+3.9. Error Handling & Resilience:
+-- General Error: In case the bot encounters any unexpected error (e.g., element not found, network issue, LinkedIn UI change causing a script breakage), it will:
+--- Exit the current application modal/process.
+--- Discard the current application.
+--- Log the error to the Google Sheet (including job details and error description).
+--- Move to the next eligible job and repeat from Step 4. This ensures continuous operation.
+-- Selector Failure Notification: As described in the UI, if a configured selector stops working, the settings UI will visually alert the user.
+
+Part 4: Technical Stack Recommendations
+To ensure robust development, maintainability, and leveraging modern web capabilities, the following technologies are recommended for the "AutoApply Pro" browser extension:
+
+4.1. Core Extension Development:
+-- Manifest V3: The extension should be built according to the latest Chrome Extension Manifest V3 specifications for security, performance, and future compatibility.
+-- JavaScript (ES6+): For all core logic, background scripts, content scripts, and UI interactivity.
+-- HTML5 & CSS3: For structuring and styling the extension's popup UI and any injected elements on LinkedIn pages.
+4.2. UI Framework/Library:
+-- React (with Vite or Create React App for bundling): Highly recommended for building the complex, interactive, and modular UI of the popup. React's component-based architecture is ideal for managing the different sections (Bots, Q, Profile, Settings) and their dynamic states. It provides a robust developer experience.
+4.3. Styling:
+-- Tailwind CSS: For rapidly building the "Material 3-like" design. Its utility-first approach aligns well with modern component-based development and allows for highly customizable styling without writing custom CSS from scratch.
+4.4. State Management (within the extension):
+-- Zustand or Jotai: Lightweight and flexible state management libraries that work well with React for managing global extension state (e.g., active bot, pending questions, settings) across popup, background, and content scripts via message passing. Avoid Redux for its boilerplate unless truly necessary for extreme complexity.
+4.5. Data Persistence:
+-- chrome.storage.local (primary): For storing user settings, profile.json, Q&A data, and application history. It's asynchronous and designed for extensions.
+-- JSON: For structuring profile.json and internal data representations.
+4.6. Browser Automation & DOM Interaction:
+-- Vanilla JavaScript DOM APIs: Direct manipulation of the DOM within the content scripts for identifying elements, interacting with forms, and simulating user actions.
+-- XPath/CSS Selectors: The primary mechanism for locating elements on LinkedIn. The custom selector feature highlights the need for a robust parsing and application of these.
+-- MutationObserver API: Potentially useful in content scripts to detect dynamic changes to the LinkedIn DOM (e.g., form pages loading, new elements appearing), allowing the bot to react.
+4.7. External API Integration:
+-- Google Gemini API (JavaScript SDK/REST API): For integrating with the AI model.
+-- Google Sheets API (JavaScript SDK/REST API): For writing application logs to the specified Google Spreadsheet. This will require careful handling of API keys and potentially service accounts for "Anyone with the link can edit" access.
+-- fetch API/Axios: For making HTTP requests to external APIs (Gemini, Google Sheets).
+4.8. Build Tools:
+-- Vite or Webpack: For bundling the extension's assets (JS, CSS, HTML) and optimizing for production. Vite is often preferred for its speed.
+-- ESLint/Prettier: For code quality, consistency, and static analysis.
